@@ -1,0 +1,16 @@
+{
+  "name": "garafa",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.coffee",
+  "dependencies": {
+    "chalk": "~1.1.1",
+    "blessed": "~0.1.81"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "BSD-2-Clause"
+}
