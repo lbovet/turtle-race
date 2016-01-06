@@ -7,7 +7,13 @@ screen = blessed.screen
 container = blessed.box
   padding: 1
   parent: screen
+msg = blessed.box
+  height: 4
+  bottom: 0
+  padding: 0
+  parent: screen
 colors = [ 'green', 'cyan']
+pos=4
 series =
   one:
     cpu: [[0, 1], [1, 5], [2, 5], [3, 1], [4, 6]]
@@ -18,15 +24,23 @@ series =
   three:
     cpu: [[0, 1], [1, 5], [2, 5], [3, 1], [4, 6]]
     io: [[0, 1], [1, 5], [2, 5], [3, 1], [4, 6]]
+setInterval ->
+  series.one.cpu.splice ++pos, 1, [pos, Math.ceil(Math.random() * 6)]
+  graphers.one.cpu adjust series.one.cpu
+  screen.render()
+, 1000
 graphers = {}
-adjust = (serie, length) ->
-  if serie.length > length
-    serie.splice 0, serie.length-length
+start = 0
+adjust = (serie) ->
+  length = Math.max(Math.floor(graphWidth * 0.9 - 5), 0)
   if serie.length < length
-    serie.unshift [0,0] for i in [0..length-serie.length]
-  return serie
+    last = if serie.length then serie[serie.length-1][0] else -1
+    serie.push [i,0] for i in [last+1..last+length-serie.length]
+  start = Math.max(pos-length+1,0)
+  return serie.slice start, start + length
+graphWidth=0
 layout = ->
-  height = Math.floor(screen.height / (Object.keys(series).length))
+  height = Math.floor(screen.height / (Object.keys(series).length))-1
   top = 0
   titleWidth = 0
   for title, serie of series
@@ -34,7 +48,7 @@ layout = ->
     for subTitle of serie
       titleWidth = Math.max subTitle.length, titleWidth
   titleWidth += 2
-  graphWidth = screen.width+1-titleWidth
+  graphWidth = Math.max(screen.width+1-titleWidth, 10)
   for title, serie of series
     lane = blessed.box
       parent: container
@@ -60,15 +74,14 @@ layout = ->
         left: titleWidth
         height: graphHeight
         bottom: 1
-      grapher = graphers[title][subTitle] = (serie) ->
-        graph.setContent ""+serie
-        graph.setContent babar(serie, {
+      grapher = graphers[title][subTitle] = do (graph) -> (s) ->
+        msg.setContent ""+s.length+" "+start+" "+pos+" "+(x[1] for x in s)
+        graph.setContent babar s,
           color: colors[index % colors.length],
           width: graphWidth
           height: graph.height
           yFractions: 1
-        })
-      grapher adjust sub, graphWidth-3
+      grapher adjust sub
       index++
     top += height
   screen.render()
