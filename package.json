@@ -4,8 +4,9 @@
   "description": "",
   "main": "index.coffee",
   "dependencies": {
+    "blessed": "~0.1.81",
     "chalk": "~1.1.1",
-    "blessed": "~0.1.81"
+    "zibar": "^1.0.2"
   },
   "devDependencies": {},
   "scripts": {
