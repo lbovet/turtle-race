@@ -6,7 +6,7 @@
   "dependencies": {
     "blessed": "~0.1.81",
     "chalk": "~1.1.1",
-    "zibar": "^1.0.2"
+    "zibar": "^1.0.3"
   },
   "devDependencies": {},
   "scripts": {
