@@ -1,5 +1,5 @@
 blessed = require 'blessed'
-zibar = require '../zibar'
+zibar = require 'zibar'
 
 aggregators =
   last: (x) -> x[-1..][0]
@@ -9,7 +9,7 @@ aggregators =
   min: (x) -> Math.min.apply(null, x)
   count: (x) -> x.length
 
-garafa = (config) ->
+turtle = (config) ->
   if config?.container
     screen = config.container.screen
     container = config.container
@@ -24,18 +24,19 @@ garafa = (config) ->
     bottom: 0
     padding: 0
     parent: screen
-  colors = [ 'yellow', 'blue,bold', 'green', 'white,bold']
+  colors = [ 'yellow', 'green', 'magenta', 'white']
   pos=0
+  length=0
   scroll=pos
-  m = ''
   series = {}
+  styles = {}
   accumulators = {}
   t0 = Date.now()
   graphers = {}
   start = 0
-  length=0
   if config?.seconds
     format = (x) -> Math.ceil(x)
+    interval = 5
   else
     format = (x) ->
       m = /(\d{2}:\d{2}:)(\d{2})/.exec new Date(x*1000).toTimeString()
@@ -44,17 +45,8 @@ garafa = (config) ->
   refresh = ->
     for title,serie of series
       for subTitle,sub of serie
-        graphers[title][subTitle] adjust sub
+        graphers[title][subTitle] sub, styles[title]?[subTitle]
     screen.render()
-  adjust = (serie) ->
-    length = Math.max(Math.floor(graphWidth * 0.9 - 5), 0)
-    if serie.length < length
-      scroll = pos
-    else
-      scroll = pos if scroll >= pos - 1
-    start = Math.max(scroll-length+1,0)
-    msg.setContent start + " " + interval
-    return serie.slice start, start + length
   graphWidth=0
   layout = ->
     height = Math.floor(container.height / (Object.keys(series).length))-1
@@ -64,8 +56,8 @@ garafa = (config) ->
     for title, serie of series
       titleWidth = Math.max title.length, titleWidth
       for subTitle of serie
-        titleWidth = 1+Math.max subTitle.length, titleWidth
-    graphWidth = Math.max(container.width+1-titleWidth, 10)
+        titleWidth = Math.max subTitle.length+1, titleWidth
+    graphWidth = Math.max(container.width-titleWidth+1, 10)
     for title, serie of series
         lane = blessed.box
           parent: container
@@ -92,13 +84,28 @@ garafa = (config) ->
               left: titleWidth
               height: graphHeight
               bottom: 1
-            grapher = graphers[title][subTitle] = do (graph,index) -> (s) ->
+            grapher = graphers[title][subTitle] = do (graph,index) -> (s, style) ->
+              length = graphWidth-10-interval
+              if s.length <= length
+                scroll = pos
+              else
+                scroll = pos if scroll >= pos - 1
+              start = Math.max(scroll-length+1,0)
+              s = s.slice start, start + Math.max(length, 0)
+              style =
+                marks: style?.marks?.slice start, start + Math.max(length, 0)
+                colors: style?.colors?.slice start, start + Math.max(length, 0)
+                vlines: style?.vlines?.slice start, start + Math.max(length, 0)
+              msg.setContent style?.color
               factor = (Date.now()-t0)/1000/pos
               conf = config?.metrics?[subTitle]
               graph.setContent zibar s,
                 color: colors[index % colors.length]
                 height: conf?.height || graph.height-3
                 yAxis: conf?.yAxis
+                marks: style.marks
+                colors: style.colors
+                vlines: style.vlines
                 xAxis:
                   display: if conf?.xAxis?.display isnt undefined then conf?.xAxis?.display else true
                   factor: factor
@@ -107,7 +114,7 @@ garafa = (config) ->
                   origin: start * factor + if not config?.seconds then t0/1000 + 6*factor else 0
                   offset: -start - if not config?.seconds then 6 else 0
                   format: conf?.xAxis?.format || format
-            grapher adjust sub
+            grapher sub, styles[title]?[subTitle]
             index++
         top += height
     screen.render()
@@ -120,7 +127,7 @@ garafa = (config) ->
       refresh()
   container.key ['q', 'C-c'], ->
     process.exit()
-  container.key 'left', -> tryScroll Math.max(length-1, scroll-10)
+  container.key 'left', -> tryScroll Math.max(length, scroll-10)
   container.key 'right', -> tryScroll scroll+10
   container.key 'home', -> tryScroll length-1
   container.key 'end', -> tryScroll pos
@@ -140,13 +147,13 @@ garafa = (config) ->
               value = agg sub, last
             else
               value = if config?.keep then last else 0
-            if not serie.length
-              for i in [0..pos]
+            if not serie.length and pos > 1
+              for i in [0..pos-1]
                 serie.push 0
             serie.push value
             sub.splice 0
             layout() if not graphers[title]?[subTitle]
-            graphers[title][subTitle] adjust serie
+            graphers[title][subTitle] serie, styles[title]?[subTitle]
         screen.render()
       , config?.interval || 1000
     return api
@@ -155,26 +162,42 @@ garafa = (config) ->
     name = if two then two else one
     accumulators[group] = accumulators[group] || {}
     acc = accumulators[group][name] = accumulators[group][name] || []
+    styles[group] = styles[group] || {}
+    style = styles[group][name] = styles[group][name] ||
+      marks:  []
+      colors: []
+      vlines: []
     layout() if not graphers[group]?[name]
-    return {
-      push: (value) -> acc.push value
-    }
+    result = {}
+    result = do(acc, style) ->
+      push: (value) ->
+        acc.push value
+        result
+      mark: (value) ->
+        style.marks[pos+1] = value
+        result
+      color: (value) ->
+        style.colors[pos+1] = value
+        result
+      vline: (value) ->
+        style.vlines[pos+1] = value
+        result
+
   api.start() if not config?.noAutoStart
   return api
 
-module.exports = garafa
+module.exports = turtle
 
-if process.argv[1].indexOf("garafa") != -1
-  g = garafa
-    keep: true
+if process.argv[1].indexOf("turtle-race") != -1
+  g = turtle
+    keep: false
     seconds: true
-    interval: 1000
+    interval: 500
 
-setInterval ->
-  g.metric("one","cpu").push Math.random()*6
-,100
+  setInterval ->
+    g.metric("one","cpu").push Math.random()*6
+  ,100
 
-setInterval ->
-  null
-  g.metric("one","io").push Math.random()*6
-,3000
+  setInterval ->
+    g.metric("one","io").push(Math.random()*6).vline("white,bold").mark("x").color("white,bold")
+  ,3000
