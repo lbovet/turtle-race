@@ -1,6 +1,7 @@
 blessed = require 'blessed'
 zibar = require 'zibar'
 
+msg = null
 aggregators =
   last: (x) -> x[-1..][0]
   sum: (x) -> Array.prototype.slice.call(x).reduce (a, b) -> a + b
@@ -8,6 +9,11 @@ aggregators =
   max: (x) -> Math.max.apply(null, x)
   min: (x) -> Math.min.apply(null, x)
   count: (x) -> x.length
+  growth: (x, context) ->
+    value = aggregators.last(x)
+    result = Math.max(value - (context.previous || value),0)
+    context.previous = value
+    return result
 
 turtle = (config) ->
   if config?.container
@@ -31,6 +37,7 @@ turtle = (config) ->
   series = {}
   styles = {}
   accumulators = {}
+  contexts = {}
   t0 = Date.now()
   graphers = {}
   start = 0
@@ -96,7 +103,6 @@ turtle = (config) ->
                 marks: style?.marks?.slice start, start + Math.max(length, 0)
                 colors: style?.colors?.slice start, start + Math.max(length, 0)
                 vlines: style?.vlines?.slice start, start + Math.max(length, 0)
-              msg.setContent style?.color
               factor = (Date.now()-t0)/1000/pos
               conf = config?.metrics?[subTitle]
               graph.setContent zibar s,
@@ -139,12 +145,14 @@ turtle = (config) ->
           for subTitle,sub of acc
             series[title] = series[title] || {}
             serie = series[title][subTitle] = series[title][subTitle] || []
+            contexts[title] = contexts[title] || {}
+            context = contexts[title][subTitle] = contexts[title][subTitle] || {}
             last = series[title][subTitle][-1..] || 0
             if sub.length
               agg = config?.metrics?[subTitle]?.aggregator
               agg = aggregators[agg] if not agg?.apply
               agg = agg || aggregators.avg
-              value = agg sub, last
+              value = agg sub, context
             else
               value = if config?.keep then last else 0
             if not serie.length and pos > 1
@@ -190,10 +198,13 @@ module.exports = turtle
 
 if process.argv[1].indexOf("turtle-race") != -1
   g = turtle
-    keep: false
+    keep: true
     seconds: true
     interval: 500
-
+    metrics:
+      cpu:
+        aggregator: 'growth'
+  p=0
   setInterval ->
     g.metric("one","cpu").push Math.random()*6
   ,100
