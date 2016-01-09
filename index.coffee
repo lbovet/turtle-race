@@ -26,7 +26,7 @@ garafa = (config) ->
     three:
       cpu: []
       io: []
-  now = Math.round(Date.now()/1000)
+  t0 = Date.now()
   setInterval ->
     pos++
     for title,serie of series
@@ -38,7 +38,6 @@ garafa = (config) ->
   graphers = {}
   start = 0
   length=0
-  factor = if config?.delay then config.delay / 1000 else 1
   if config?.seconds
     format = (x) -> Math.ceil(x)
   else
@@ -98,13 +97,14 @@ garafa = (config) ->
           height: graphHeight
           bottom: 1
         grapher = graphers[title][subTitle] = do (graph,index) -> (s) ->
+          factor = (Date.now()-t0)/1000/pos
           graph.setContent zibar s,
             color: colors[index % colors.length]
             height: graph.height-3
             xAxis:
-              factor: if config?.delay then config.delay / 1000 else 1
+              factor: factor
               interval: interval
-              origin: start * factor + if not config?.seconds then now + 6*factor else 0
+              origin: start * factor + if not config?.seconds then t0/1000 + 6*factor else 0
               offset: -start - if not config?.seconds then 6 else 0
               format: format
         index++
@@ -127,5 +127,5 @@ module.exports = garafa
 
 if process.argv[1].indexOf("garafa") != -1
   garafa
-    delay: 500
+    delay: 200
     seconds: true
