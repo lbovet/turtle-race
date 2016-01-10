@@ -11,9 +11,10 @@ aggregators =
   count: (x) -> x.length
   growth: (x, context) ->
     value = aggregators.last(x)
-    result = Math.max(value - (context.previous || value),0)
-    if value > result
-      context.previous = value
+    previous = if context.previous isnt undefined then context.previous else value
+    diff = value - previous
+    result = Math.max(diff,0)
+    context.previous = value
     return result
 
 turtle = (config) ->
@@ -108,7 +109,7 @@ turtle = (config) ->
             factor = (Date.now()-t0)/1000/pos
             conf = config?.metrics?[subTitle]
             graph.setContent zibar s,
-              color: colors[index % colors.length]
+              color: conf?.color || colors[index % colors.length]
               height: conf?.height || graph.height-3
               yAxis: conf?.yAxis
               marks: style.marks
