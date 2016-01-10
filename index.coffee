@@ -189,13 +189,13 @@ turtle = (config) ->
         acc.push value
         result
       mark: (value) ->
-        style.marks[pos+1] = value
+        style.marks[pos] = value
         result
       color: (value) ->
-        style.colors[pos+1] = value
+        style.colors[pos] = value
         result
       vline: (value) ->
-        style.vlines[pos+1] = value
+        style.vlines[pos] = value
         result
 
   api.start() if not config?.noAutoStart
