@@ -165,7 +165,6 @@ turtle = (config) ->
               for i in [0..pos-1]
                 serie.push 0
             serie.push value
-            msg.setContent JSON.stringify(serie)
             sub.splice 0
             layout() if not graphers[title]?[subTitle]
             graphers[title][subTitle] serie, styles[title]?[subTitle]
