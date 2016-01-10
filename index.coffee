@@ -20,13 +20,12 @@ turtle = (config) ->
     screen = config.container.screen
     container = config.container
   else
-    screen = blessed.screen
-      smartCSR: true
+    screen = blessed.screen()
     container = blessed.box
       padding: 1
       parent: screen
   msg = blessed.box
-    height: 4
+    height: 1
     bottom: 0
     padding: 0
     parent: screen
@@ -56,73 +55,78 @@ turtle = (config) ->
     screen.render()
   graphWidth=0
   layout = ->
-    height = Math.floor(container.height / (Object.keys(series).length))-1
     top = 0
     offset = 0
     titleWidth = 0
+    graphCount = 0
     for title, serie of series
       titleWidth = Math.max title.length, titleWidth
       for subTitle of serie
         titleWidth = Math.max subTitle.length+1, titleWidth
+        graphCount++
+    maxGraphHeight = Math.floor((container.height-1) / graphCount)-1
+    graphHeight = Math.min maxGraphHeight, config?.maxGraphHeight || 8
     graphWidth = Math.max(container.width-titleWidth+1, 10)
     for title, serie of series
         lane = blessed.box
           parent: container
           width: '100%'
-          height: height
+          height: graphHeight * Object.keys(serie).length
           top: top
         blessed.box
           tags: true
           parent: lane
           content: "{bold}{white-fg}#{title}"
-        graphHeight = Math.max(Math.floor(lane.height / (Object.keys(serie).length)), 4)
-        graphHeight = Math.min graphHeight, config?.maxGraphHeight || 8
         index = 0
         graphers[title] = {}
         for subTitle, sub of serie
-            blessed.box
-              tags: true
-              parent: lane
-              top: Math.ceil((index+0.2) * graphHeight)
-              content: " {white-fg}#{subTitle}"
-            graph = blessed.box
-              parent: lane
-              top: index * graphHeight
-              left: titleWidth
-              height: graphHeight
-              bottom: 1
-            grapher = graphers[title][subTitle] = do (graph,index) -> (s, style) ->
-              length = graphWidth-10-interval
-              if s.length <= length
-                scroll = pos
-              else
-                scroll = pos if scroll >= pos - 1
-              start = Math.max(scroll-length+1,0)
-              s = s.slice start, start + Math.max(length, 0)
-              style =
-                marks: style?.marks?.slice start, start + Math.max(length, 0)
-                colors: style?.colors?.slice start, start + Math.max(length, 0)
-                vlines: style?.vlines?.slice start, start + Math.max(length, 0)
-              factor = (Date.now()-t0)/1000/pos
-              conf = config?.metrics?[subTitle]
-              graph.setContent zibar s,
-                color: colors[index % colors.length]
-                height: conf?.height || graph.height-3
-                yAxis: conf?.yAxis
-                marks: style.marks
-                colors: style.colors
-                vlines: style.vlines
-                xAxis:
-                  display: if conf?.xAxis?.display isnt undefined then conf?.xAxis?.display else true
-                  factor: factor
-                  color: conf?.xAxis?.color
-                  interval: conf?.xAxis?.interval || interval
-                  origin: start * factor + if not config?.seconds then t0/1000 + 6*factor else 0
-                  offset: -start - if not config?.seconds then 6 else 0
-                  format: conf?.xAxis?.format || format
-            grapher sub, styles[title]?[subTitle]
-            index++
-        top += height
+          blessed.box
+            tags: true
+            parent: lane
+            top: Math.ceil((index+0.2) * graphHeight)
+            content: " {white-fg}#{subTitle}"
+          graph = blessed.box
+            parent: lane
+            top: index * graphHeight
+            left: titleWidth
+            height: graphHeight
+            bottom: 1
+          grapher = graphers[title][subTitle] = do (graph,index,subTitle) -> (s, style) ->
+            length = graphWidth-10-interval
+            if s.length <= length
+              scroll = pos
+            else
+              scroll = pos if scroll >= pos - 1
+            start = Math.max(scroll-length+1,0)
+            s = s.slice start, start + Math.max(length, 0)
+            style =
+              marks: style?.marks?.slice start, start + Math.max(length, 0)
+              colors: style?.colors?.slice start, start + Math.max(length, 0)
+              vlines: style?.vlines?.slice start, start + Math.max(length, 0)
+            factor = (Date.now()-t0)/1000/pos
+            conf = config?.metrics?[subTitle]
+            graph.setContent zibar s,
+              color: colors[index % colors.length]
+              height: conf?.height || graph.height-3
+              yAxis: conf?.yAxis
+              marks: style.marks
+              colors: style.colors
+              vlines: style.vlines
+              min: conf?.min
+              max: conf?.max
+              high: conf?.high
+              low: conf?.low
+              xAxis:
+                display: if conf?.xAxis?.display isnt undefined then conf?.xAxis?.display else true
+                factor: factor
+                color: conf?.xAxis?.color
+                interval: conf?.xAxis?.interval || interval
+                origin: start * factor + if not config?.seconds then t0/1000 + 6*factor else 0
+                offset: -start - if not config?.seconds then 6 else 0
+                format: conf?.xAxis?.format || format
+          grapher sub, styles[title]?[subTitle]
+          index++
+          top += graphHeight
     screen.render()
   container.on 'resize', ->
     layout()
@@ -203,12 +207,15 @@ if process.argv[1].indexOf("turtle-race") != -1
     interval: 500
     metrics:
       cpu:
+        max: 30
         aggregator: 'growth'
   p=0
   setInterval ->
     g.metric("one","cpu").push Math.random()*6
   ,100
-
-  setInterval ->
-    g.metric("one","io").push(Math.random()*6).vline("white,bold").mark("x").color("white,bold")
+  setTimeout ->
+    g.metric("three","cpu").push Math.random()*6
   ,3000
+  setInterval ->
+    g.metric("two","io").push(Math.random()*6).vline("white,bold").mark("x").color("white,bold")
+  ,1000
