@@ -12,7 +12,8 @@ aggregators =
   growth: (x, context) ->
     value = aggregators.last(x)
     result = Math.max(value - (context.previous || value),0)
-    context.previous = value
+    if value > result
+      context.previous = value
     return result
 
 turtle = (config) ->
@@ -20,7 +21,8 @@ turtle = (config) ->
     screen = config.container.screen
     container = config.container
   else
-    screen = blessed.screen()
+    screen = blessed.screen
+      smartCSR: true
     container = blessed.box
       padding: 1
       parent: screen
@@ -151,7 +153,7 @@ turtle = (config) ->
             serie = series[title][subTitle] = series[title][subTitle] || []
             contexts[title] = contexts[title] || {}
             context = contexts[title][subTitle] = contexts[title][subTitle] || {}
-            last = series[title][subTitle][-1..] || 0
+            last = series[title][subTitle][-1..]?[0] || 0
             if sub.length
               agg = config?.metrics?[subTitle]?.aggregator
               agg = aggregators[agg] if not agg?.apply
@@ -163,6 +165,7 @@ turtle = (config) ->
               for i in [0..pos-1]
                 serie.push 0
             serie.push value
+            msg.setContent JSON.stringify(serie)
             sub.splice 0
             layout() if not graphers[title]?[subTitle]
             graphers[title][subTitle] serie, styles[title]?[subTitle]
@@ -207,12 +210,12 @@ if process.argv[1].indexOf("turtle-race") != -1
     interval: 500
     metrics:
       cpu:
-        max: 30
+        max: 1
         aggregator: 'growth'
   p=0
   setInterval ->
-    g.metric("one","cpu").push Math.random()*6
-  ,100
+    g.metric("one","cpu").push 123
+  ,1000
   setTimeout ->
     g.metric("three","cpu").push Math.random()*6
   ,3000
