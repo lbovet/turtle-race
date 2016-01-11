@@ -24,14 +24,14 @@ turtle = (config) ->
   else
     screen = blessed.screen
       smartCSR: true
+    msg = blessed.box
+      height: 3
+      bottom: 0
+      padding: 1
+      parent: screen
     container = blessed.box
       padding: 1
       parent: screen
-  msg = blessed.box
-    height: 1
-    bottom: 0
-    padding: 0
-    parent: screen
   colors = [ 'yellow', 'green', 'magenta', 'white']
   pos=0
   length=0
@@ -42,6 +42,7 @@ turtle = (config) ->
   contexts = {}
   t0 = Date.now()
   graphers = {}
+  contents = []
   start = 0
   if config?.seconds
     format = (x) -> Math.ceil(x)
@@ -57,7 +58,12 @@ turtle = (config) ->
         graphers[title][subTitle] sub, styles[title]?[subTitle]
     screen.render()
   graphWidth=0
+  layingOut=false
   layout = ->
+    layingOut = true
+    for content in contents
+      content.destroy()
+    contents.splice 0
     top = 0
     offset = 0
     titleWidth = 0
@@ -67,72 +73,75 @@ turtle = (config) ->
       for subTitle of serie
         titleWidth = Math.max subTitle.length+1, titleWidth
         graphCount++
-    maxGraphHeight = Math.floor((container.height-1) / graphCount)-1
+    container.height = screen.height - if msg then msg.height else 0
+    maxGraphHeight = Math.floor(container.height / graphCount)
     graphHeight = Math.min maxGraphHeight, config?.maxGraphHeight || 8
     graphWidth = Math.max(container.width-titleWidth+1, 10)
     for title, serie of series
-        lane = blessed.box
-          parent: container
-          width: '100%'
-          height: graphHeight * Object.keys(serie).length
-          top: top
+      lane = blessed.box
+        parent: container
+        width: '100%'
+        height: graphHeight * Object.keys(serie).length
+        top: top
+      blessed.box
+        tags: true
+        parent: lane
+        content: "{bold}{white-fg}#{title}"
+      contents.push lane
+      index = 0
+      graphers[title] = {}
+      for subTitle, sub of serie
         blessed.box
           tags: true
           parent: lane
-          content: "{bold}{white-fg}#{title}"
-        index = 0
-        graphers[title] = {}
-        for subTitle, sub of serie
-          blessed.box
-            tags: true
-            parent: lane
-            top: Math.ceil((index+0.2) * graphHeight)
-            content: " {white-fg}#{subTitle}"
-          graph = blessed.box
-            parent: lane
-            top: index * graphHeight
-            left: titleWidth
-            height: graphHeight
-            bottom: 1
-          grapher = graphers[title][subTitle] = do (graph,index,subTitle) -> (s, style) ->
-            length = graphWidth-10-interval
-            if s.length <= length
-              scroll = pos
-            else
-              scroll = pos if scroll >= pos - 1
-            start = Math.max(scroll-length+1,0)
-            s = s.slice start, start + Math.max(length, 0)
-            style =
-              marks: style?.marks?.slice start, start + Math.max(length, 0)
-              colors: style?.colors?.slice start, start + Math.max(length, 0)
-              vlines: style?.vlines?.slice start, start + Math.max(length, 0)
-            factor = (Date.now()-t0)/1000/pos
-            conf = config?.metrics?[subTitle]
-            graph.setContent zibar s,
-              color: conf?.color || colors[index % colors.length]
-              height: conf?.height || graph.height-3
-              yAxis: conf?.yAxis
-              marks: style.marks
-              colors: style.colors
-              vlines: style.vlines
-              min: conf?.min
-              max: conf?.max
-              high: conf?.high
-              low: conf?.low
-              xAxis:
-                display: if conf?.xAxis?.display isnt undefined then conf?.xAxis?.display else true
-                factor: factor
-                color: conf?.xAxis?.color
-                interval: conf?.xAxis?.interval || interval
-                origin: start * factor + if not config?.seconds then t0/1000 + 6*factor else 0
-                offset: -start - if not config?.seconds then 6 else 0
-                format: conf?.xAxis?.format || format
-          grapher sub, styles[title]?[subTitle]
-          index++
-          top += graphHeight
-    screen.render()
+          top: index * graphHeight+1
+          content: " {white-fg}#{subTitle}"
+        graph = blessed.box
+          parent: lane
+          top: index * graphHeight
+          left: titleWidth
+          height: graphHeight
+          bottom: 1
+        grapher = graphers[title][subTitle] = do (graph,index,subTitle) -> (s, style) ->
+          length = graphWidth-10-interval
+          if s.length <= length
+            scroll = pos
+          else
+            scroll = pos if scroll >= pos - 1
+          start = Math.max(scroll-length+1,0)
+          s = s.slice start, start + Math.max(length, 0)
+          style =
+            marks: style?.marks?.slice start, start + Math.max(length, 0)
+            colors: style?.colors?.slice start, start + Math.max(length, 0)
+            vlines: style?.vlines?.slice start, start + Math.max(length, 0)
+          factor = (Date.now()-t0)/1000/pos
+          conf = config?.metrics?[subTitle]
+          graph.setContent zibar s,
+            color: conf?.color || colors[index % colors.length]
+            height: conf?.height || graph.height-3
+            yAxis: conf?.yAxis
+            marks: style.marks
+            colors: style.colors
+            vlines: style.vlines
+            min: conf?.min
+            max: conf?.max
+            high: conf?.high
+            low: conf?.low
+            xAxis:
+              display: if conf?.xAxis?.display isnt undefined then conf?.xAxis?.display else true
+              factor: factor
+              color: conf?.xAxis?.color
+              interval: conf?.xAxis?.interval || interval
+              origin: start * factor + if not config?.seconds then t0/1000 + 6*factor else 0
+              offset: -start - if not config?.seconds then 6 else 0
+              format: conf?.xAxis?.format || format
+        grapher sub, styles[title]?[subTitle]
+        index++
+        top += graphHeight
+      screen.render()
+      layingOut = false
   container.on 'resize', ->
-    layout()
+    layout() if not layingOut
   layout()
   tryScroll = (s) ->
     if pos > length
@@ -197,7 +206,8 @@ turtle = (config) ->
       vline: (value) ->
         style.vlines[pos] = value
         result
-
+  api.message = (line) ->
+    msg.setContent line if msg
   api.start() if not config?.noAutoStart
   return api
 

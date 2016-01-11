@@ -1,16 +1,17 @@
 {
   "name": "turtle-race",
-  "version": "0.8.0",
+  "version": "0.10.0",
   "description": "",
-  "main": "index.coffee",
+  "main": "index.js",
   "dependencies": {
     "blessed": "~0.1.81",
     "chalk": "~1.1.1",
-    "zibar": "^1.0.6"
+    "zibar": "^1.0.8"
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublish": "coffee -c index.coffee"
   },
   "author": "",
   "license": "BSD-2-Clause"
