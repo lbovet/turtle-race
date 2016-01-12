@@ -24,6 +24,7 @@ turtle = (config) ->
   else
     screen = blessed.screen
       smartCSR: true
+      forceUnicode: true
     msg = blessed.box
       height: 3
       bottom: 0
@@ -40,7 +41,8 @@ turtle = (config) ->
   styles = {}
   accumulators = {}
   contexts = {}
-  t0 = Date.now()
+  t0=0
+  now=0
   graphers = {}
   contents = []
   start = 0
@@ -69,7 +71,7 @@ turtle = (config) ->
     titleWidth = 0
     graphCount = 0
     for title, serie of series
-      titleWidth = Math.max title.length, titleWidth
+      titleWidth = Math.max title.length+1, titleWidth
       for subTitle of serie
         titleWidth = Math.max subTitle.length+1, titleWidth
         graphCount++
@@ -114,7 +116,7 @@ turtle = (config) ->
             marks: style?.marks?.slice start, start + Math.max(length, 0)
             colors: style?.colors?.slice start, start + Math.max(length, 0)
             vlines: style?.vlines?.slice start, start + Math.max(length, 0)
-          factor = (Date.now()-t0)/1000/pos
+          factor = (now-t0)/1000/pos
           conf = config?.metrics?[subTitle]
           graph.setContent zibar s,
             color: conf?.color || colors[index % colors.length]
@@ -138,6 +140,7 @@ turtle = (config) ->
         grapher sub, styles[title]?[subTitle]
         index++
         top += graphHeight
+      container.focus()
       screen.render()
       layingOut = false
   container.on 'resize', ->
@@ -147,39 +150,41 @@ turtle = (config) ->
     if pos > length
       scroll = s
       refresh()
-  container.key ['q', 'C-c'], ->
+  screen.key ['q', 'C-c'], ->
     process.exit()
-  container.key 'left', -> tryScroll Math.max(length, scroll-10)
-  container.key 'right', -> tryScroll scroll+10
-  container.key 'home', -> tryScroll length-1
-  container.key 'end', -> tryScroll pos
+  screen.key 'left', -> tryScroll Math.max(length-1, scroll-10)
+  screen.key 'right', -> tryScroll scroll+10
+  screen.key 'home', -> tryScroll length-1
+  screen.key 'end', -> tryScroll pos
   api = {}
   api.start = ->
+    t0 = Date.now()
     setInterval ->
-        pos++
-        for title,acc of accumulators
-          for subTitle,sub of acc
-            series[title] = series[title] || {}
-            serie = series[title][subTitle] = series[title][subTitle] || []
-            contexts[title] = contexts[title] || {}
-            context = contexts[title][subTitle] = contexts[title][subTitle] || {}
-            last = series[title][subTitle][-1..]?[0] || 0
-            if sub.length
-              agg = config?.metrics?[subTitle]?.aggregator
-              agg = aggregators[agg] if not agg?.apply
-              agg = agg || aggregators.avg
-              value = agg sub, context
-            else
-              value = if config?.keep then last else 0
-            if not serie.length and pos > 1
-              for i in [0..pos-1]
-                serie.push 0
-            serie.push value
-            sub.splice 0
-            layout() if not graphers[title]?[subTitle]
-            graphers[title][subTitle] serie, styles[title]?[subTitle]
-        screen.render()
-      , config?.interval || 1000
+      now = Date.now()
+      pos++
+      for title,acc of accumulators
+        for subTitle,sub of acc
+          series[title] = series[title] || {}
+          serie = series[title][subTitle] = series[title][subTitle] || []
+          contexts[title] = contexts[title] || {}
+          context = contexts[title][subTitle] = contexts[title][subTitle] || {}
+          last = series[title][subTitle][-1..]?[0] || 0
+          if sub.length
+            agg = config?.metrics?[subTitle]?.aggregator
+            agg = aggregators[agg] if not agg?.apply
+            agg = agg || aggregators.avg
+            value = agg sub, context
+          else
+            value = if config?.keep then last else 0
+          if not serie.length and pos > 1
+            for i in [0..pos-1]
+              serie.push 0
+          serie.push value
+          sub.splice 0
+          layout() if not graphers[title]?[subTitle]
+          graphers[title][subTitle] serie, styles[title]?[subTitle]
+      screen.render()
+    , config?.interval || 1000
     return api
   api.metric = (one, two) ->
     group = if two then one else ''
