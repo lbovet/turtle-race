@@ -1,18 +1,38 @@
 {
   "name": "turtle-race",
-  "version": "0.15.0",
-  "description": "",
-  "main": "index.js",
-  "dependencies": {
-    "blessed": "~0.1.81",
-    "chalk": "~1.1.1",
-    "zibar": "^1.0.9"
+  "version": "1.0.0",
+  "description": "Real-time metric graphs in the terminal",
+  "author": "Laurent Bovet <laurent.bovet@windmaster.ch>",
+  "keywords": [
+    "terminal",
+    "console",
+    "graph",
+    "chart",
+    "metric",
+    "statistics",
+    "real-time",
+    "timeline",
+    "time series",
+    ""
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lbovet/turtle-race"
   },
-  "devDependencies": {},
+  "main": "index.js",
+  "bin": {
+    "turtle-race": "turtle-race.js"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepublish": "coffee -c index.coffee"
   },
-  "author": "",
+  "dependencies": {
+    "blessed": "~0.1.81",
+    "chalk": "~1.1.1",
+    "minimist": "^1.2.0",
+    "split": "^1.0.0",
+    "zibar": "^1.0.9",
+  },
   "license": "BSD-2-Clause"
 }

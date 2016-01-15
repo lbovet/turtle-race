@@ -157,35 +157,38 @@ turtle = (config) ->
   screen.key 'home', -> tryScroll length-1
   screen.key 'end', -> tryScroll pos
   api = {}
+  started = false
   api.start = ->
-    t0 = Date.now()
-    setInterval ->
-      now = Date.now()
-      pos++
-      for title,acc of accumulators
-        for subTitle,sub of acc
-          series[title] = series[title] || {}
-          serie = series[title][subTitle] = series[title][subTitle] || []
-          contexts[title] = contexts[title] || {}
-          context = contexts[title][subTitle] = contexts[title][subTitle] || {}
-          last = series[title][subTitle][-1..]?[0] || 0
-          if sub.length
-            agg = config?.metrics?[subTitle]?.aggregator
-            agg = aggregators[agg] if not agg?.apply
-            agg = agg || aggregators.avg
-            value = agg sub, context
-          else
-            value = if config?.keep then last else 0
-          if not serie.length and pos > 1
-            for i in [0..pos-1]
-              serie.push 0
-          serie.push value
-          sub.splice 0
-          layout() if not graphers[title]?[subTitle]
-          graphers[title][subTitle] serie, styles[title]?[subTitle]
-      screen.render()
-    , config?.interval || 1000
-    return api
+    if not started
+      t0 = Date.now()
+      setInterval ->
+        now = Date.now()
+        pos++
+        for title,acc of accumulators
+          for subTitle,sub of acc
+            series[title] = series[title] || {}
+            serie = series[title][subTitle] = series[title][subTitle] || []
+            contexts[title] = contexts[title] || {}
+            context = contexts[title][subTitle] = contexts[title][subTitle] || {}
+            last = series[title][subTitle][-1..]?[0] || 0
+            if sub.length
+              agg = config?.metrics?[subTitle]?.aggregator
+              agg = aggregators[agg] if not agg?.apply
+              agg = agg || aggregators.avg
+              value = agg sub, context
+            else
+              value = if config?.keep then last else 0
+            if not serie.length and pos > 1
+              for i in [0..pos-1]
+                serie.push 0
+            serie.push value
+            sub.splice 0
+            layout() if not graphers[title]?[subTitle]
+            graphers[title][subTitle] serie, styles[title]?[subTitle]
+        screen.render()
+      , config?.interval || 1000
+      started = true
+      return api
   api.metric = (one, two) ->
     group = if two then one else ''
     name = if two then two else one
