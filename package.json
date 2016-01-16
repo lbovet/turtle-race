@@ -1,6 +1,6 @@
 {
   "name": "turtle-race",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Real-time metric graphs in the terminal",
   "author": "Laurent Bovet <laurent.bovet@windmaster.ch>",
   "keywords": [

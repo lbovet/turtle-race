@@ -122,6 +122,7 @@ turtle = (config) ->
           graph.setContent zibar s,
             color: conf?.color || colors[index % colors.length]
             height: conf?.height || graph.height-3
+            chars: conf?.chars
             yAxis: conf?.yAxis
             marks: style.marks
             colors: style.colors
