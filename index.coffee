@@ -25,6 +25,7 @@ turtle = (config) ->
     screen = blessed.screen
       smartCSR: true
       forceUnicode: true
+      input: config.input
     msg = blessed.box
       height: 3
       bottom: 0
@@ -52,7 +53,7 @@ turtle = (config) ->
   else
     format = (x) ->
       m = /(\d{2}:\d{2}:)(\d{2})/.exec new Date(x*1000).toTimeString()
-      m[1].grey+m[2].cyan
+      m[1].black.bold+m[2].cyan
     interval = 10
   refresh = ->
     for title,serie of series
@@ -200,43 +201,25 @@ turtle = (config) ->
       colors: []
       vlines: []
     layout() if not graphers[group]?[name]
-    result = {}
-    result = do(acc, style) ->
-      push: (value) ->
-        acc.push value
-        result
-      mark: (value) ->
-        style.marks[pos] = value
-        result
-      color: (value) ->
-        style.colors[pos] = value
-        result
-      vline: (value) ->
-        style.vlines[pos] = value
-        result
+    do(acc, style) ->
+      result = {}
+      result =
+        push: (value) ->
+          acc.push value
+          result
+        mark: (value) ->
+          style.marks[pos] = value
+          result
+        color: (value) ->
+          style.colors[pos] = value
+          result
+        vline: (value) ->
+          style.vlines[pos] = value
+          result
+      result
   api.message = (line) ->
     msg.setContent line if msg
   api.start() if not config?.noAutoStart
   return api
 
 module.exports = turtle
-
-if process.argv[1].indexOf("turtle-race") != -1
-  g = turtle
-    keep: true
-    seconds: true
-    interval: 500
-    metrics:
-      cpu:
-        max: 1
-        aggregator: 'growth'
-  p=0
-  setInterval ->
-    g.metric("one","cpu").push 123
-  ,1000
-  setTimeout ->
-    g.metric("three","cpu").push Math.random()*6
-  ,3000
-  setInterval ->
-    g.metric("two","io").push(Math.random()*6).vline("white,bold").mark("x").color("white,bold")
-  ,1000

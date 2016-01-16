@@ -12,8 +12,7 @@
     "statistics",
     "real-time",
     "timeline",
-    "time series",
-    ""
+    "time series"
   ],
   "repository": {
     "type": "git",
@@ -32,7 +31,9 @@
     "chalk": "~1.1.1",
     "minimist": "^1.2.0",
     "split": "^1.0.0",
-    "zibar": "^1.0.9",
+    "tail": "^0.4.0",
+    "ttys": "0.0.3",
+    "zibar": "^1.0.12"
   },
   "license": "BSD-2-Clause"
 }
