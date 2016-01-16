@@ -6,8 +6,8 @@ if(argv.c) {
 }
 pattern = new RegExp(config.pattern || "([^\\.]*)\\.?(.*)")
 config.input = require('ttys').stdin
-turtle = require('./index')(config);
-if(process.argv.indexOf("-h") == -1) {
+if(!process.stdin.isTTY) {
+  turtle = require('./index')(config);
   process.stdin.pipe(require('split')()).on('data', function(line) {
     if(line) {
       turtle.start()
@@ -19,6 +19,6 @@ if(process.argv.indexOf("-h") == -1) {
     }
   });
 } else {
-    process.stdout.write("Usage: turtle-race [-c config-file] [file]\n");
+    process.stdout.write("Usage: <command> | turtle-race [-c config-file] [file]\n");
     process.exit(1);
 }
