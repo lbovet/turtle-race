@@ -179,7 +179,7 @@ turtle = (config) ->
               agg = agg || aggregators.avg
               value = agg sub, context
             else
-              value = if config?.keep then last else 0
+              value = if config?.keep or config?.metrics?[subTitle]?.keep then last else 0
             if not serie.length and pos > 1
               for i in [0..pos-1]
                 serie.push 0
