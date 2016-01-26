@@ -1,6 +1,8 @@
 # Turtle Race
 Real-time metric graphs in the terminal.
 
+![anim](https://cloud.githubusercontent.com/assets/692124/12593996/2566ab4e-c474-11e5-8d24-bf0b5da0108f.gif)
+
 # Installation
 ```
 npm install turtle-race -g
@@ -23,13 +25,13 @@ Example:
 (while true; do echo one $RANDOM; echo two $RANDOM; sleep 0.5; done) | turtle-race
 ```
 
-# Keys
+## Keys
 
 - Left/Right: scroll
 - Home/End: scroll to start/end
 - Ctrl-C or q: quit
 
-# Configuration
+## Configuration
 
 ```javascript
 {
@@ -46,7 +48,7 @@ Example:
 }
 ```
 
-# Metric Groups
+## Metric Groups
 
 Metrics can be grouped. By default, the group name prefixes the metric name, separated with a dot. So the metric line format is:
 
@@ -56,7 +58,7 @@ Metrics can be grouped. By default, the group name prefixes the metric name, sep
 
 When using a metric source with a different format, you can specify in the `pattern` configuration value the regular expression that will be used to parse the metric group and name. It should provide one or two capture groups, for the group name and the metric name.
 
-# Aggregators
+## Aggregators
 
 When multiples values are received during the sampling period, they are combined using an aggregator function.
 
@@ -71,7 +73,7 @@ Additionally, for values that are only growing, like counters, it may be interes
 
 - growth
 
-# Marking values
+## Marking values
 
 In addition to values, the input can contain zibar markers and styling for the current value. Example:
 
@@ -80,6 +82,9 @@ nginx.cpu red,bold       # styles the graph bar
 mysql.requests ▼         # place a mark above the graph
 redis.memory |white      # draws a vertical line
 ```
+
+![marking values](https://cloud.githubusercontent.com/assets/692124/12594246/6756e784-c475-11e5-8ae6-017969efb82c.png)
+
 # Using as a library
 
 ```
@@ -110,24 +115,24 @@ var metric = turtle.metric("nginx", "cpu");
 metric.push(5.4);
 metric.mark("▼");  // marker above graph
 metric.mark({ symbol:"▼", color: "yellow,bold" }); // styled marker
-metric.vline(white); // vertical line
+metric.vline("white"); // vertical line
 ```
 
-# Auto-Start
+## Auto-Start
 By default, the rendering starts automatically. You can control it yourself with the config parameter `noAutoStart: true` then start it when appropriate.
 
 ```javascript
 turtle.start();
 ```
 
-# Status message
+## Status message
 A message can be displayed in the bottom line.
 
 ```javascript
 turtle.message("hello");
 ```
 
-# Custom Aggregator Function
+## Custom Aggregator Function
 
 In the metric configuration, additionally to the named builtin aggregators, you can use a custom function. For example, an aggregator using the first value received during the sampling period.
 
@@ -137,5 +142,5 @@ aggregator: function(values, context) { return values[0] }
 
 The `context` parameter is an object associated to the metric. You can use it to store data you want to use across calls, e.g. to implement statistics windows.
 
-# Blessed Integration
+## Blessed Integration
 As turtle-race is based on [blessed](https://www.npmjs.com/package/blessed), you can embed it in an existing node by specifying it as `container` parameter in the config.
