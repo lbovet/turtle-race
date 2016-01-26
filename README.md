@@ -36,14 +36,15 @@ Example:
 
 ```javascript
 {
-  "interval": 500,               // sampling period in ms (default: 1000)
-  "seconds" : true,              // shows only number of seconds since start
-  "keep": true,                  // keeps showing the last value
-  "pattern": "([^-]*)-(.*)",     // pattern to parse the metric name (see metric groups below)
-  "metrics": {                   // specific configuration for a given metric
-    "<metric-name>": {           // the metric name (without group, see below)
-      "aggregator": "growth",    // function aggregating values (see aggregators below)
-      "color": "yellow,bold"     // [zibar configuration](https://www.npmjs.com/package/zibar#configuration)
+  "interval": 500,                // sampling period in ms (default: 1000)
+  "seconds" : true,               // shows only number of seconds since start
+  "keep": true,                   // keeps showing the last value
+  "pattern": "([^-]*)-(.*)",      // pattern to parse the metric name (see metric groups below)
+  "metrics": {                    // specific configuration for a given metric
+    "<metric-name>": {            // the metric name (without group, see below)
+      "aggregator": "growth",     // function aggregating values (see aggregators below)
+      "color": "yellow,bold",     // zibar configuration (see customizing below)
+      ...
     }
   }
 }
@@ -58,6 +59,10 @@ Metrics can be grouped. By default, the group name prefixes the metric name, sep
 ```
 
 When using a metric source with a different format, you can specify in the `pattern` configuration value the regular expression that will be used to parse the metric group and name. It should provide one or two capture groups, for the group name and the metric name.
+
+## Customizing
+
+Graphs can be customized using [zibar configuration](https://www.npmjs.com/package/zibar#configuration).
 
 ## Aggregators
 
