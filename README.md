@@ -24,6 +24,7 @@ Example:
 ```
 (while true; do echo one $RANDOM; echo two $RANDOM; sleep 0.5; done) | turtle-race
 ```
+![anim](https://cloud.githubusercontent.com/assets/692124/12594442/72240ff6-c476-11e5-88f1-8cc4630ba29b.gif)
 
 ## Keys
 
